@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Room</title>
+  <style>
+    #chat-container { max-width: 600px; margin: 0 auto; padding: 10px; }
+    #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 5px; }
+    #message-input { width: 80%; }
+    #typing-indicator { font-size: 0.9em; color: gray; }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <h1>Chat Room</h1>
+    <div>
+      <select id="room-select">
+        <option value="devops">DevOps</option>
+        <option value="server chat">Server Chat</option>
+        <option value="business">Business</option>
+        <option value="sports">Sports</option>
+        <option value="video games">Video Games</option>
+      </select>
+      <button id="join-room">Join Room</button>
+    </div>
+
+    <div id="chat-section" style="display: none;">
+      <div id="messages"></div>
+      <div id="typing-indicator"></div>
+      <input id="message-input" type="text">
+      <button id="send-message">Send</button>
+      <button id="leave-room">Leave Room</button>
+      <button id="logout" class="btn">Logout</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const roomSelect = document.getElementById('room-select');
+    const joinRoomButton = document.getElementById('join-room');
+    const chatSection = document.getElementById('chat-section');
+    const messageInput = document.getElementById('message-input');
+    const sendMessageButton = document.getElementById('send-message');
+    const messagesContainer = document.getElementById('messages');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const leaveRoomButton = document.getElementById('leave-room');
+    const logoutButton = document.getElementById('logout');
+    let currentRoom = '';
+    let typingTimeout;
+
+    
+    joinRoomButton.onclick = () => {
+      currentRoom = roomSelect.value;
+      socket.emit('joinRoom', currentRoom);
+      chatSection.style.display = 'block';
+    };
+
+    
+    sendMessageButton.onclick = () => {
+      const message = messageInput.value;
+      if (message.trim()) {
+        const messageData = { room: currentRoom, message, sender: 'self' };
+        socket.emit('sendMessage', { room: currentRoom, message });
+        appendMessage(`You: ${message}`);
+        messageInput.value = '';
+      }
+    };
+
+    
+    function appendMessage(message) {
+      const msgElement = document.createElement('div');
+      msgElement.textContent = message;
+      messagesContainer.appendChild(msgElement);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    
+    socket.on('receiveMessage', (data) => {
+        if (data.sender !== 'self') {
+            appendMessage(`${data.room}: ${data.message}`);
+        }
+    });
+    
+    leaveRoomButton.onclick = () => {
+      socket.emit('leaveRoom', currentRoom);
+      currentRoom = '';
+      chatSection.style.display = 'none';
+    };
+
+    logoutButton.onclick = () => {
+        socket.disconnect();
+        localStorage.removeItem('userToken');
+        window.location.href = '/login.html';
+    };
+  </script>
+</body>
+</html>

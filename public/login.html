@@ -1,0 +1,28 @@
+<form id="loginForm">
+    <input type="text" name="username" placeholder="Username" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
+  
+  <script>
+    document.getElementById('loginForm').onsubmit = async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const userData = Object.fromEntries(formData);
+  
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+  
+      if (response.ok) {
+        alert('Login successful!');
+        localStorage.setItem('username', userData.username);
+        window.location.href = 'chat.html';
+      } else {
+        alert('Login failed');
+      }
+    };
+  </script>
+  
